@@ -48,6 +48,7 @@ class State : public TympanStateBase_UI { // look in TympanStateBase or TympanSt
     //states related to the display
     bool printCPUtoGUI = false; //note that the TympanStateBase_UI has the CPU printing stuff built-in, but do it here ourselves just to illustrate
     bool printLevelsToGUI = false;
+
 };
 
 #endif

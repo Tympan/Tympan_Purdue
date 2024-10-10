@@ -8,6 +8,19 @@
   Records audio line-in (as if from mic from DPOAE probe) to SD card.
   Control via BT App.
 
+  This program has been expanded to allow for the Tympan to also make its SD card
+  visible from your PC/Mac.  This support is very experimental and has several
+  known issues.  But, it still can be much better than having to repeated remove
+  and re-insert the SD card.
+
+  The SD Reader behavior is called "MTP".  To enable MTP, you must tell the Arduino IDE
+  to compile your code with different settings.  To see these settings and to see
+  troubleshooting tips, see the comments at the top of the file "setup_MTP.h" that is
+  here in this sketch.
+
+  MTP Support is VERY EXPERIMENTAL!!  There are weird behaviors that come with the underlying
+  MTP support provided by Teensy and its libraries.  
+
   MIT License, Use at your own risk.
 */
 
@@ -22,31 +35,9 @@ const float sample_rate_Hz = 44117.0f ;  //choose your sample rate (up to 96000)
 const int audio_block_samples = 128;     //do not make bigger than 128
 AudioSettings_F32 audio_settings(sample_rate_Hz, audio_block_samples);
 
-
 // Create the audio library objects that we'll use
-Tympan                    myTympan(TympanRev::E, audio_settings);           //use TympanRev::D or E or F
-AudioInputI2S_F32         audio_in(audio_settings);                         //from the Tympan_Library
-AudioSDWriter_F32_UI      audioSDWriter(audio_settings);                    //record audio to SD card.  This is stereo by default
-AudioSynthWaveform_F32    sine1(audio_settings),sine2(audio_settings);      //from the Tympan_Library...for generating tones
-AudioEffectFade_F32       fade1(audio_settings), fade2(audio_settings);     //For smoohting start/stop of the tones
-AudioFilterBiquad_F32     highpass1(audio_settings), highpass2(audio_settings);     //for limiting bandwidth prior to measuring loudness
-AudioFilterBiquad_F32     lowpass1(audio_settings), lowpass2(audio_settings);       //for limiting bandwidth prior to measuring loudness
-AudioCalcLeq_F32          measureLEQ1(audio_settings), measureLEQ2(audio_settings); //for measuring loudness
-AudioOutputI2S_F32        audio_out(audio_settings);   //from the Tympan_Library
-
-// Create the audio connections from the sine1 object to the audio output object
-AudioConnection_F32     patchCord10(sine1, 0, fade1, 0);  //connect to left output
-AudioConnection_F32     patchCord11(sine2, 0, fade2, 0);  //connect to right output
-AudioConnection_F32     patchCord12(fade1, 0, audio_out, 0);  //connect to left output
-AudioConnection_F32     patchCord13(fade2, 0, audio_out, 1);  //connect to right output
-AudioConnection_F32     patchcord20(audio_in, 0, audioSDWriter, 0);   //connect Raw audio to left channel of SD writer
-AudioConnection_F32     patchcord21(audio_in, 1, audioSDWriter, 1);   //connect Raw audio to right channel of SD writer
-AudioConnection_F32     patchcord30(audio_in, 0, highpass1, 0);   //connect Raw audio to a highpass filter
-AudioConnection_F32     patchcord31(audio_in, 1, highpass2, 0);   //connect Raw audio to a highpass filter
-AudioConnection_F32     patchcord32(highpass1, 0, lowpass1, 0);   //more filtering
-AudioConnection_F32     patchcord33(highpass2, 0, lowpass2, 0);   //more filtering
-AudioConnection_F32     patchcord34(lowpass1, 0, measureLEQ1, 0);   //filtered audio to level measurement
-AudioConnection_F32     patchcord35(lowpass2, 0, measureLEQ2, 0);   //filtered audio to level measurement
+Tympan    myTympan(TympanRev::E, audio_settings);           //use TympanRev::D or E or F
+#include "AudioProcessing.h"  //here is where most of the audio stuff is created
 
 // Create classes for controlling the system
 #include   "SerialManager.h"
@@ -62,48 +53,15 @@ void setupSerialManager(void) {
   //serialManager.add_UI_element(&ble);
   serialManager.add_UI_element(&audioSDWriter);
 }
-          
+
+/* Create the MTP servicing stuff so that one can access the SD card via USB */
+/* If you want this, be sure to set the USB mode via the Arduino IDE,  Tools Menu -> USB Type -> Serial + MTP (experimental) */
+#include "setup_MTP.h"  //put this line sometime after the audioSDWriter has been instantiated
+
 //create manager for the DPOAE protocol and for the test tones
 DPOAE_Settings_Manager DPOAE_manager(&myState.test_params);
 Tone_Manager tone_manager(&sine1, &sine2, sample_rate_Hz);
-const int sd_start_millis = 2000; //dead period after starting SD recording prior to tones starting
-const int tone_dur_millis = 3000; //duration of tone
-const int silence_dur_millis = 1000; //duration of silence between tones
-const float fade_msec = 50.0; //length of fade in and fade out of tones
 #include "DPOAE_test_logic.h"
-
-//settings for level measurement
-float hp_Hz = 100.0;     //cutoff for highpass filter
-float lp_Hz = 10000.0;   //cutoff for lowpass filter
-float LEQ_ave_sec = 0.5; //averaging time
-void setupLevelMeasurements(void) {
-  highpass1.setHighpass(0,hp_Hz);  highpass2.setHighpass(0,hp_Hz);
-  lowpass1.setLowpass(0,lp_Hz);  lowpass2.setLowpass(0,lp_Hz);
-  measureLEQ1.setTimeWindow_sec(LEQ_ave_sec);measureLEQ2.setTimeWindow_sec(LEQ_ave_sec);
-}
-
-void setConfiguration(int config) {
- 
-  switch (config) {
-    case State::INPUT_PCBMICS:
-      myTympan.inputSelect(TYMPAN_INPUT_ON_BOARD_MIC); // use the on-board microphones
-      break;
-
-    case State::INPUT_JACK_MIC:
-      myTympan.inputSelect(TYMPAN_INPUT_JACK_AS_MIC); // use the mic jack
-      myTympan.setEnableStereoExtMicBias(true);  //put the mic bias on both channels
-      break;
-   
-    case State::INPUT_JACK_LINE:
-      Serial.println("setConfiguration: changing to INPUT JACK as LINE-IN...");
-      myTympan.inputSelect(TYMPAN_INPUT_JACK_AS_LINEIN); // use the line-input through holes
-      break;
-      
-    default:
-        return;
-  }
-  myState.input_source = config;
-}
 
 
 // define setup()...this is run once when the hardware starts up
@@ -124,7 +82,7 @@ void setup(void)
   myTympan.enable();
 
   //Choose the desired input
-  setConfiguration(myState.input_source);
+  setConfiguration(myState.input_source);  //see AudioProcessing.h
 
   //Set the desired volume levels
   myTympan.volume_dB(myState.output_gain_dB);          // headphone amplifier.  -63.6 to +24 dB in 0.5dB steps.
@@ -147,7 +105,7 @@ void setup(void)
   jumpToFreqStepAndPlayTones(0);  //start at step 0 (ie, start at the first step in the protocol)
 
   //setup level measurements
-  setupLevelMeasurements();
+  setupLevelMeasurements();   //see AudioProcessing.h
   
   Serial.println("Setup complete.");
   serialManager.printHelp();
@@ -166,25 +124,33 @@ void loop(void)
     for (int i=0; i < msgLen; i++) serialManager.respondToByte(msgFromBle[i]);
   }
 
-  //service the BLE advertising state...if not recording to SD
-  if (audioSDWriter.getState() != AudioSDWriter::STATE::RECORDING) {
-    ble.updateAdvertising(millis(),5000); //check every 5000 msec to ensure it is advertising (if not connected)
-  }
-
   //service the SD recording
   audioSDWriter.serviceSD_withWarnings(audio_in); //For the warnings, it asks the i2s_in class for some info
 
   //service the LEDs...blink slow normally, blink fast if recording
   myTympan.serviceLEDs(millis(),audioSDWriter.getState() == AudioSDWriter::STATE::RECORDING); 
 
-  //periodically print the CPU and Memory Usage
-  if (myState.printCPUtoGUI) { myTympan.printCPUandMemory(millis(),3000); serviceUpdateCPUtoGUI(millis(),3000);}      //print every 3000 msec
+  // Did the user activate MTP mode?  If so, service the MTP and nothing else
+  if (use_MTP) {   //service MTP (ie, the SD card appearing as a drive on your PC/Mac
+     
+     service_MTP();  //Find in Setup_MTP.h 
+  
+  } else { //do everything else!
 
-  //service the state of the test
-  serviceSteppedTest(millis());  //see DPOAE_test_logic.h
+    //service the BLE advertising state...if not recording to SD
+    if (audioSDWriter.getState() != AudioSDWriter::STATE::RECORDING) {
+      ble.updateAdvertising(millis(),5000); //check every 5000 msec to ensure it is advertising (if not connected)
+    }
 
-  //service the level measurements
-  if (myState.printLevelsToGUI) serviceLevelMeasurements(millis(),1000);   //update every 1000msec
+    //periodically print the CPU and Memory Usage
+    if (myState.printCPUtoGUI) { myTympan.printCPUandMemory(millis(),3000); serviceUpdateCPUtoGUI(millis(),3000);}      //print every 3000 msec
+
+    //service the state of the test
+    serviceSteppedTest(millis());  //see DPOAE_test_logic.h
+
+    //service the level measurements
+    if (myState.printLevelsToGUI) serviceLevelMeasurements(millis(),1000);   //update every 1000msec
+  }
 
 }  //end loop()
 

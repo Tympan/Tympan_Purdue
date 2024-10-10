@@ -22,6 +22,11 @@ extern void start_DPOAE_test(void);
 extern void stop_DPOAE_test(void);
 extern bool enablePrintLevelsToGUI(bool);
 
+
+//externals for MTP
+extern void start_MTP(void);
+//extern void stop_MTP(void);
+
 //
 // The purpose of this class is to be a central place to handle all of the interactions
 // to and from the SerialMonitor or TympanRemote App.  Therefore, this class does things like:
@@ -69,17 +74,21 @@ class SerialManager : public SerialManagerBase  {  // see Tympan_Library for Ser
 
 void SerialManager::printHelp(void) {  
  Serial.println(" General: No Prefix");
-  Serial.println(" h: Print this help");
+  Serial.println("  h : Print this help");
   Serial.println(" f/F: Incr/Decrease DPOAE Test Step");
   Serial.println(" 1-7: Jump to DPOAE Test Step"); 
   Serial.println(" o/O: Incr/Decrease F1 Loudness");
   Serial.println(" p/P: Incr/Decrease F2 Loudness");
-  Serial.println(" g: Print all gain levels.");
+  Serial.println("  g  : Print all gain levels.");
   Serial.println(" m/M: Mute/Unmute the audio output.");
   Serial.println(" q/Q: Start/Stop the Stepped DPOAE Test.");
   Serial.println(" w/e: Switch Input to PCB Mics, Line In");
   Serial.println(" l/L: Start/Stop printing measured mic levels.");
   Serial.println(" c/C: Enable/Disable printing of CPU and Memory usage");
+  
+  #if defined(USE_MTPDISK) || defined(USB_MTPDISK_SERIAL)  //detect whether "MTP Disk" or "Serial + MTP Disk" were selected in the Arduino IDEA
+  Serial.println("  > : SDUtil : Start MTP mode to read SD from PC (Tympan must be freshly restarted)");
+  #endif
 
   //Add in the printHelp() that is built-into the other UI-enabled system components.
   //The function call below loops through all of the UI-enabled classes that were
@@ -210,7 +219,20 @@ bool SerialManager::processCharacter(char c) {  //this is called by SerialManage
     case 'M':
       muteOutput(false);
       updateMuteDisplay();
-      break;      
+      break;
+  #if defined(USE_MTPDISK) || defined(USB_MTPDISK_SERIAL)  //detect whether "MTP Disk" or "Serial + MTP Disk" were selected in the Arduino IDEA  
+    case '>':
+      Serial.println("SerialMonitor: Received command to start MTP service..."); Serial.flush();delay(10);
+      if (audioSDWriter.getState() != AudioSDWriter::STATE::UNPREPARED) {  //anything other than UNPREPARED means that the SD has been used before
+        Serial.println("SerialManager: *** ERROR ***: Cannot run MTP if you have recorded to SD.");
+        Serial.println("    : You must restart your Tympan to clear out any previous SD activity.");
+        Serial.println("    : Once you re-start the Tympan, send the command to activate MTP mode.");
+      } else {
+        Serial.println("Starting MTP service to access SD card (everything else will stop)");
+        start_MTP();
+      }
+      break; 
+  #endif   
     default:
       ret_val = SerialManagerBase::processCharacter(c);  //in here, it automatically loops over the different UI elements
       break;

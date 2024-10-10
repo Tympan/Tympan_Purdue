@@ -1,4 +1,9 @@
 
+const int sd_start_millis = 2000; //dead period after starting SD recording prior to tones starting
+const int tone_dur_millis = 3000; //duration of tone
+const int silence_dur_millis = 1000; //duration of silence between tones
+const float fade_msec = 50.0; //length of fade in and fade out of tones
+
 //update the state of the stepped DPOAE test
 int serviceSteppedTest(unsigned long curTime_millis) {
   static unsigned long lastTransition_millis = 0;
