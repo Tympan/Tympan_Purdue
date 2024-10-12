@@ -133,10 +133,10 @@ void printInputSignalLevels(unsigned long cur_millis, unsigned long updatePeriod
   if ( (cur_millis < lastUpdate_millis) || (cur_millis >= lastUpdate_millis + updatePeriod_millis) ) {
     Serial.print("Input gain = " + String(myState.input_gain_dB,1) + " dB");
     Serial.print(", Measured Input (L,R) = ");
-    Serial.print(calcInputLevel_L.getCurrentLevel_dB(),2);
+    Serial.print(calcInputLevel_L.getCurrentLevel(),4);
     Serial.print(", ");
-    Serial.print(calcInputLevel_R.getCurrentLevel_dB(),2);
-    Serial.print(" dB re: input FS");
+    Serial.print(calcInputLevel_R.getCurrentLevel(),4);
+    Serial.print(" dB re: input FS-test");
     Serial.println();
 
     lastUpdate_millis = cur_millis;    

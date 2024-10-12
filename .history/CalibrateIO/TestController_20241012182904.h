@@ -7,7 +7,7 @@
 #include <vector>
 
 #define TEST_CONTROLLER_DEFAULT_current_test_mode         TEST_MODE_MUTE
-#define TEST_CONTROLLER_DEFAULT_stepped_test_step_dur_sec 0.5 //Lowest reliable speed 
+#define TEST_CONTROLLER_DEFAULT_stepped_test_step_dur_sec 0.5 //Speed
 #define TEST_CONTROLLER_DEFAULT_default_sine_freq_Hz      1000.0
 #define TEST_CONTROLLER_DEFAULT_default_sine_amplitude    (sqrt(2.0)*sqrt(pow(10.0,0.1*-20.0)))    //(-20dBFS converted to linear and then converted from RMS to amplitude)
 

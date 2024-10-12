@@ -72,12 +72,12 @@ def parseTestDataString(all_lines):
     
     all_vals = np.array(all_vals)  # Now, all rows should have consistent length
     
-    # Split into step, freq_Hz, and input_v (Left and Right)
+    # Split into step, freq_Hz, and input_dBFS (Left and Right)
     test_id = all_vals[:, 0]  # First column: step number
     freq_Hz = all_vals[:, 1]  # Second column: tone frequency
-    input_v = all_vals[:, 2:]  # Remaining columns: Left and Right dBFS
+    input_dBFS = all_vals[:, 2:]  # Remaining columns: Left and Right dBFS
     
-    return test_id, freq_Hz, input_v
+    return test_id, freq_Hz, input_dBFS
 
     
 

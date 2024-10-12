@@ -17,8 +17,8 @@ class Measurement {
         
         //save the values
         all_freq_Hz[test_step] = freq_Hz;
-        all_left_dB[test_step] = measureLevel_L->getCurrentLevel_dB();
-        all_right_dB[test_step] = measureLevel_R->getCurrentLevel_dB();
+        all_left_dB[test_step] = measureLevel_L->getCurrentLevel();
+        all_right_dB[test_step] = measureLevel_R->getCurrentLevel();
         printMeasurement(test_step);
       } else {
         Serial.println("Measurement: takeMeasurement: *** ERROR ***: no pointers to level measuring blocks have been provided!");
@@ -28,8 +28,8 @@ class Measurement {
     void printMeasurement(const int test_step) {
       Serial.print("Measurement: (step, Tone Hz, Left dBFS, Right dBFS): " + String(test_step));
       Serial.print(", " + String(all_freq_Hz[test_step],2));
-      Serial.print(", " + String(all_left_dB[test_step],2));
-      Serial.print(", " + String(all_right_dB[test_step],2));
+      Serial.print(", " + String(all_left_dB[test_step],8));
+      Serial.print(", " + String(all_right_dB[test_step],8));
       Serial.println();
     }
 

@@ -72,12 +72,12 @@ def parseTestDataString(all_lines):
     
     all_vals = np.array(all_vals)  # Now, all rows should have consistent length
     
-    # Split into step, freq_Hz, and input_v (Left and Right)
+    # Split into step, freq_Hz, and input_dBFS (Left and Right)
     test_id = all_vals[:, 0]  # First column: step number
     freq_Hz = all_vals[:, 1]  # Second column: tone frequency
-    input_v = all_vals[:, 2:]  # Remaining columns: Left and Right dBFS
+    input_dBFS = all_vals[:, 2:]  # Remaining columns: Left and Right dBFS
     
-    return test_id, freq_Hz, input_v
+    return test_id, freq_Hz, input_dBFS
 
     
 
@@ -114,12 +114,12 @@ if 1:
     all_lines = sendCharacterAndGetResponse('v')
 
     # parse the data
-    test_id, freq_Hz, input_v = parseTestDataString(all_lines)
+    test_id, freq_Hz, input_dBFS = parseTestDataString(all_lines)
 
   # Check if we have two channels for Left and Right data (voltages)
     if input_v.shape[1] >= 2:  # ensure at least two columns exist
-        left_values = input_v[:, 0]  # Left channel voltage
-        right_values = input_v[:, 1]  # Right channel voltage
+        left_values = input_dBFS[:, 0]  # Left channel voltage
+        right_values = input_dBFS[:, 1]  # Right channel voltage
 
         # Calculate impedance using the formula Z = (V2 - V1) * 100 / V2
         impedance = ((left_values - right_values) * 100) / left_values
