@@ -26,10 +26,10 @@ class Measurement {
     }
 
     void printMeasurement(const int test_step) {
-      Serial.print("Measurement: (step, Tone Hz, Left dBFS, Right dBFS): " + String(test_step));
+      Serial.print("Measurement: (step, Tone Hz, Left V, Right V): " + String(test_step));
       Serial.print(", " + String(all_freq_Hz[test_step],2));
-      Serial.print(", " + String(all_left_dB[test_step],8));
-      Serial.print(", " + String(all_right_dB[test_step],8));
+      Serial.print(", " + String(all_left_dB[test_step],9));
+      Serial.print(", " + String(all_right_dB[test_step],9));
       Serial.println();
     }
 

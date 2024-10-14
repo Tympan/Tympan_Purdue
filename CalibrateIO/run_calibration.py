@@ -1,7 +1,7 @@
 #
 # run_calibration.py
 # 
-# Chip Audette, OpenAudio, Oct 2024
+# Chip Audette, Max Chen, OpenAudio, Oct 2024
 # MIT License 
 #
 # This script communicates with the Tympan over the USB Serial link.
@@ -16,6 +16,16 @@ import time
 import matplotlib.pyplot as plt
 import codecs
 import numpy as np
+
+import os
+import sys
+import time
+import tkinter as tk
+from tkinter import messagebox
+import math
+import csv
+import threading
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # ##################### Define functions
 def clearSerialBuffer():
@@ -52,7 +62,7 @@ def sendCharacterAndGetResponse(send_character, print_as_received = True, wait_p
 def parseTestDataString(all_lines):
     all_vals = []
     list_strings = all_lines.splitlines()  # convert long string (with newlines) into list of strings
-    test_string = 'dBFS):'
+    test_string = 'V):'
     
     for line in list_strings:
         ind = line.find(test_string)
@@ -105,8 +115,15 @@ if 1:
     all_lines = sendCharacterAndGetResponse('DDD')
     wait_period_sec = 0.5  #faster value for faster (0.2 sec) test tones
 
+# Run iterator and label
+run = 0
+limit = 50
+selected_type = "B"
+selected_length = "Open"
 
-if 1:
+for i in range(limit): #For loop 50 times
+    run += 1 #Increment Run
+
     # command the test to start
     all_lines = sendCharacterAndGetResponse('T',wait_period_sec=wait_period_sec)
 
@@ -116,8 +133,10 @@ if 1:
     # parse the data
     test_id, freq_Hz, input_v = parseTestDataString(all_lines)
 
-  # Check if we have two channels for Left and Right data (voltages)
-    if input_v.shape[1] >= 2:  # ensure at least two columns exist
+    if input_v.size == 0:
+        print("Error: No valid data was parsed from the response.")
+    # Check if we have two channels for Left and Right data (voltages)
+    elif input_v.shape[1] >= 2:  # ensure at least two columns exist
         left_values = input_v[:, 0]  # Left channel voltage
         right_values = input_v[:, 1]  # Right channel voltage
 
@@ -137,19 +156,33 @@ if 1:
 
         # Plot Impedance
         #plt.subplot(1, 2, 2)
-        plt.semilogx(freq_Hz, impedance, label='Impedance', linewidth=2, color='orange')
-        plt.xlabel('Frequency (Hz)')
-        plt.ylabel('Impedance')
-        plt.legend()
-        plt.title('Impedance between Left and Right Channels')
+        #plt.semilogx(freq_Hz, impedance, label='Impedance', linewidth=2, color='orange')
+        #plt.xlabel('Frequency (Hz)')
+        #plt.ylabel('Impedance')
+        #plt.legend()
+        #plt.title('Impedance between Left and Right Channels')
+        #plt.tight_layout()
+        #plt.show()
 
-        plt.tight_layout()
-        plt.show()
+        # Folder selection and creation
+        folder_name = f"{selected_type}_{selected_length}"
+        base_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Tympan_collected_Data", folder_name)
+        if not os.path.exists(base_folder):
+            os.makedirs(base_folder)
 
+        # Opens and writes to file based on the file structure explained seperately.. 
+        file_path = os.path.join(base_folder, f"{folder_name}_{run}.csv")
+        with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Frequency (Hz)", "Trace |Z| (Ohm)"])
+            # Write each frequency and impedance pair to the file
+            for freq, z in zip(freq_Hz, impedance):
+                writer.writerow([freq, z])
     else:
         print("Error: Insufficient data for Left and Right channels.")
+    
+    time.sleep(4)
 
 # close the serial port
 print("Closing serial port...")
 serial_with_tympan.close()
-
