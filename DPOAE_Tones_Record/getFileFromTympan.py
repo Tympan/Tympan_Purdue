@@ -112,7 +112,7 @@ print("REPLY:",reply)                                     #print the lines to th
 # ############# Now, let's follow the typical download procedure
 
 # First, let's ask for a list of files on the Tympan's SD card
-sendTextToSerial(serial_to_tympan, 'a')                   #send the command to the Tympan
+sendTextToSerial(serial_to_tympan, 'z')                   #send the command to the Tympan
 reply = readLineFromSerial(serial_to_tympan)              #get the one-line reply from the Tympan
 print("REPLY:",reply.strip())                             #print the line to the screen here in Python
 
@@ -128,7 +128,7 @@ else:
     print("ERROR: no filenames were received from the Tympan!")
 
 # Second, start to open the file on the Tympan
-sendTextToSerial(serial_to_tympan, 'A')                   #send the command to the Tympan
+sendTextToSerial(serial_to_tympan, 'Z')                   #send the command to the Tympan
 reply = readLineFromSerial(serial_to_tympan)              #get the one-line reply from the Tympan
 print("REPLY:",reply.strip())                             #print the line to the screen here in Python
 
@@ -138,14 +138,14 @@ reply = readLineFromSerial(serial_to_tympan)              #get the one-line repl
 print("REPLY:",reply.strip())                             #print the line to the screen here in Python
 
 # Third, get the file size in bytes
-sendTextToSerial(serial_to_tympan, 't')                   #send the command to the Tympan
+sendTextToSerial(serial_to_tympan, 'x')                   #send the command to the Tympan
 reply = readLineFromSerial(serial_to_tympan)              #get the one-line reply from the Tympan
 print("REPLY:",reply.strip())                             #print the line to the screen here in Python
 n_bytes = int(reply)                                      #interpret the value as an integer
 print("RESULT: value=",n_bytes)                           #print the value to the screen here in Python
 
 # Fourth, transfer the file itself
-sendTextToSerial(serial_to_tympan, 'T')                   #send the command to the Tympan
+sendTextToSerial(serial_to_tympan, 'X')                   #send the command to the Tympan
 reply = readBytesFromSerial(serial_to_tympan,n_bytes)     #get the one-line reply from the Tympan
 if (len(reply) < 200):
     print("REPLY:",reply)                                     #print the bytes to the screen here in Pyton

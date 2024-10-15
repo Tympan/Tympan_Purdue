@@ -88,10 +88,10 @@ void SerialManager::printHelp(void) {
   Serial.println(" q/Q: Start/Stop the Stepped DPOAE Test.");
   //Serial.println(" w/e: Switch Input to PCB Mics (w) or Line In (e)");
   Serial.println(" l/L: Start/Stop printing measured mic levels.");
-  Serial.println(" a  : SD Transfer 1: Get file names at root of SD.");
-  Serial.println(" A  : SD Transfer 2: Open a file from the SD (will as for filename)");
-  Serial.println(" t  : SD Transfer 3: Get size of file in bytes");
-  Serial.println(" T  : SD Transfer 4: Send find to PC");
+  Serial.println(" z  : SD Transfer 1: Get file names at root of SD.");
+  Serial.println(" Z  : SD Transfer 2: Open a file from the SD (will as for filename)");
+  Serial.println(" x  : SD Transfer 3: Get size of file in bytes");
+  Serial.println(" X  : SD Transfer 4: Send find to PC");
   
   #if defined(USE_MTPDISK) || defined(USB_MTPDISK_SERIAL)  //detect whether "MTP Disk" or "Serial + MTP Disk" were selected in the Arduino IDEA
     Serial.println("  > : SDUtil : Start MTP mode to read SD from PC (Tympan must be freshly restarted)");
@@ -227,11 +227,11 @@ bool SerialManager::processCharacter(char c) {  //this is called by SerialManage
       muteOutput(false);
       updateMuteDisplay();
       break;
-    case 'a':
+    case 'z':
       Serial.print("SerialMonitor: Listing Files on SD:"); //don't include end-of-line
       SD_to_serial.sendFilenames(','); //send file names seperated by commas
       break;
-    case 'A':
+    case 'Z':
       {
         Serial.println("SerialMonitor: Opening file: Send filename (ending with newline character) within 10 seconds");
         String fname;  receiveFilename(fname, 10000);  //wait 10 seconds
@@ -242,14 +242,14 @@ bool SerialManager::processCharacter(char c) {  //this is called by SerialManage
         }
       }
       break;
-    case 't':
+    case 'x':
       if (SD_to_serial.isFileOpen()) {
         SD_to_serial.sendFileSize();
       } else {
         Serial.println("SerialMonitor: *** ERROR ***: Cannot get file size because no file is open");
       }
       break;
-    case 'T':
+    case 'X':
       if (SD_to_serial.isFileOpen()) {
         SD_to_serial.sendFile();
         Serial.println();
@@ -360,10 +360,10 @@ void SerialManager::createTympanRemoteLayout(void) {
 
   //Add a page for showing the levels
   page_h = myGUI.addPage("Level Measurements");
-      card_h = page_h->addCard("Select Audio Input");
-        card_h->addButton("PCB Mics",      "w", "configPCB",   12);  //displayed string, command, button ID, button width (out of 12)
-        //card_h->addButton("Jack as Mic",   "W", "configMIC",   12);  //displayed string (blank for now), command (blank), button ID, button width (out of 12)
-        card_h->addButton("Jack as Line-In","e", "configLINE",  12);  //displayed string, command, button ID, button width (out of 12) 
+      // card_h = page_h->addCard("Select Audio Input");
+      //   card_h->addButton("PCB Mics",      "w", "configPCB",   12);  //displayed string, command, button ID, button width (out of 12)
+      //   //card_h->addButton("Jack as Mic",   "W", "configMIC",   12);  //displayed string (blank for now), command (blank), button ID, button width (out of 12)
+      //   card_h->addButton("Jack as Line-In","e", "configLINE",  12);  //displayed string, command, button ID, button width (out of 12) 
   
     card_h = page_h->addCard(String("Analog Input Gain (dB)"));
       card_h->addButton("",      "", "inpGain",   12); //label, command, id, width (out of 12)...THIS ISFULL WIDTH!
