@@ -142,15 +142,15 @@ sendTextToSerial(serial_to_tympan, 'x')                   #send the command to t
 reply = readLineFromSerial(serial_to_tympan)              #get the one-line reply from the Tympan
 print("REPLY:",reply.strip())                             #print the line to the screen here in Python
 n_bytes = int(reply)                                      #interpret the value as an integer
-print("RESULT: value=",n_bytes)                           #print the value to the screen here in Python
+print("RESULT: number of bytes in file =",n_bytes)        #print the value to the screen here in Python
 
 # Fourth, transfer the file itself
 sendTextToSerial(serial_to_tympan, 'X')                   #send the command to the Tympan
 reply = readBytesFromSerial(serial_to_tympan,n_bytes)     #get the one-line reply from the Tympan
 if (len(reply) < 200):
-    print("REPLY:",reply)                                     #print the bytes to the screen here in Pyton
+    print("REPLY:",reply)                                 #print the bytes to the screen here in Pyton
 else:
-    print("REPLY: received",len(reply),"bytes")
+    print("RESULT: received",len(reply),"bytes")
 
 
 # ############################# Finally, let's finish up
