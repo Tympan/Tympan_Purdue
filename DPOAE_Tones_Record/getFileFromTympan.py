@@ -123,6 +123,7 @@ print("RESULT: Files on Tympan SD:", fnames)              #print the line to the
 # choose the file that you want to download to the PC 
 if len(fnames) > 0:
     fname = fnames[-1] #load the last (ie, the most recent?)   ############ NEED YOUR INPUT
+    #fname = 'AUDIO001.WAV'  #or, specify your own file name                                
     print("ACTION: Asking for file:",fname)
 else:
     print("ERROR: no filenames were received from the Tympan!")
