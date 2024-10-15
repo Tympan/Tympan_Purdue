@@ -6,10 +6,11 @@
 #include "State.h"
 
 //classes from the main sketch that might be used here
-extern Tympan myTympan;                  //created in the main *.ino file
-extern State myState;                    //created in the main *.ino file
-extern AudioSettings_F32 audio_settings; //created in the main *.ino file  
-extern AudioSDWriter_F32_UI audioSDWriter;
+extern Tympan myTympan;                    //created in the main *.ino file
+extern State myState;                      //created in the main *.ino file
+extern AudioSettings_F32 audio_settings;   //created in the main *.ino file  
+extern AudioSDWriter_F32_UI audioSDWriter; //created in AudioProcessing.h
+extern SDtoSerial SD_to_serial;            //created in the main *.ino file
 
 //functions in the main sketch that I want to call from here
 extern void setConfiguration(int);
@@ -51,6 +52,8 @@ class SerialManager : public SerialManagerBase  {  // see Tympan_Library for Ser
     void printTympanRemoteLayout(void); 
     bool processCharacter(char c);  //this is called automatically by SerialManagerBase.respondToByte(char c)
 
+    int receiveFilename(String &filename,const unsigned long timeout_millis);
+
     //method for updating the GUI on the App
     void setFullGUIState(bool activeButtonsOnly = false);
     void updateCalDisplay(void);
@@ -75,6 +78,7 @@ class SerialManager : public SerialManagerBase  {  // see Tympan_Library for Ser
 void SerialManager::printHelp(void) {  
  Serial.println(" General: No Prefix");
   Serial.println("  h : Print this help");
+  Serial.println(" c/C: Enable/Disable printing of CPU and Memory usage");
   Serial.println(" f/F: Incr/Decrease DPOAE Test Step");
   Serial.println(" 1-7: Jump to DPOAE Test Step"); 
   Serial.println(" o/O: Incr/Decrease F1 Loudness");
@@ -82,12 +86,15 @@ void SerialManager::printHelp(void) {
   Serial.println("  g  : Print all gain levels.");
   Serial.println(" m/M: Mute/Unmute the audio output.");
   Serial.println(" q/Q: Start/Stop the Stepped DPOAE Test.");
-  Serial.println(" w/e: Switch Input to PCB Mics, Line In");
+  //Serial.println(" w/e: Switch Input to PCB Mics (w) or Line In (e)");
   Serial.println(" l/L: Start/Stop printing measured mic levels.");
-  Serial.println(" c/C: Enable/Disable printing of CPU and Memory usage");
+  Serial.println(" a  : SD Transfer 1: Get file names at root of SD.");
+  Serial.println(" A  : SD Transfer 2: Open a file from the SD (will as for filename)");
+  Serial.println(" t  : SD Transfer 3: Get size of file in bytes");
+  Serial.println(" T  : SD Transfer 4: Send find to PC");
   
   #if defined(USE_MTPDISK) || defined(USB_MTPDISK_SERIAL)  //detect whether "MTP Disk" or "Serial + MTP Disk" were selected in the Arduino IDEA
-  Serial.println("  > : SDUtil : Start MTP mode to read SD from PC (Tympan must be freshly restarted)");
+    Serial.println("  > : SDUtil : Start MTP mode to read SD from PC (Tympan must be freshly restarted)");
   #endif
 
   //Add in the printHelp() that is built-into the other UI-enabled system components.
@@ -111,24 +118,24 @@ bool SerialManager::processCharacter(char c) {  //this is called by SerialManage
     case 'J': case 'j':           //The TympanRemote app sends a 'J' to the Tympan when it connects
       printTympanRemoteLayout();  //in resonse, the Tympan sends the definition of the GUI that we'd like
       break;
-    case 'w':
-      Serial.println("Received: Switch input to PCB Mics");
-      setConfiguration(State::INPUT_PCBMICS);
-      updateGUI_inputSelect();
-      updateGUI_inputGain(); //changing inputs changes the input gain, too
-      break;
-    case 'W':
-      Serial.println("Recevied: Switch input to Mics on Jack.");
-      setConfiguration(State::INPUT_JACK_MIC);
-      updateGUI_inputSelect();
-      updateGUI_inputGain(); //changing inputs changes the input gain, too
-      break;
-    case 'e':
-      myTympan.println("Received: Switch input to Line-In on Jack");
-      setConfiguration(State::INPUT_JACK_LINE);
-      updateGUI_inputSelect();
-      updateGUI_inputGain(); //changing inputs changes the input gain, too
-      break;      
+    // case 'w':
+    //   Serial.println("Received: Switch input to PCB Mics");
+    //   setConfiguration(State::INPUT_PCBMICS);
+    //   updateGUI_inputSelect();
+    //   updateGUI_inputGain(); //changing inputs changes the input gain, too
+    //   break;
+    // case 'W':
+    //   Serial.println("Recevied: Switch input to Mics on Jack.");
+    //   setConfiguration(State::INPUT_JACK_MIC);
+    //   updateGUI_inputSelect();
+    //   updateGUI_inputGain(); //changing inputs changes the input gain, too
+    //   break;
+    // case 'e':
+    //   myTympan.println("Received: Switch input to Line-In on Jack");
+    //   setConfiguration(State::INPUT_JACK_LINE);
+    //   updateGUI_inputSelect();
+    //   updateGUI_inputGain(); //changing inputs changes the input gain, too
+    //   break;      
     case 'g': case 'G':
       printGainLevels();
       break;
@@ -220,6 +227,36 @@ bool SerialManager::processCharacter(char c) {  //this is called by SerialManage
       muteOutput(false);
       updateMuteDisplay();
       break;
+    case 'a':
+      Serial.print("SerialMonitor: Listing Files on SD:"); //don't include end-of-line
+      SD_to_serial.sendFilenames(','); //send file names seperated by commas
+      break;
+    case 'A':
+      {
+        Serial.println("SerialMonitor: Opening file: Send filename (ending with newline character) within 10 seconds");
+        String fname;  receiveFilename(fname, 10000);  //wait 10 seconds
+        if (SD_to_serial.open(fname)) {
+          Serial.println("SerialMonitor: " + fname + " successfully opened");
+        } else {
+          Serial.println("SerialMonitor: *** ERROR ***: " + fname + " could not be opened");
+        }
+      }
+      break;
+    case 't':
+      if (SD_to_serial.isFileOpen()) {
+        SD_to_serial.sendFileSize();
+      } else {
+        Serial.println("SerialMonitor: *** ERROR ***: Cannot get file size because no file is open");
+      }
+      break;
+    case 'T':
+      if (SD_to_serial.isFileOpen()) {
+        SD_to_serial.sendFile();
+        Serial.println();
+      } else {
+        Serial.println("SerialMonitor: *** ERROR ***: Cannot send file because no file is open");
+      }
+      break;
   #if defined(USE_MTPDISK) || defined(USB_MTPDISK_SERIAL)  //detect whether "MTP Disk" or "Serial + MTP Disk" were selected in the Arduino IDEA  
     case '>':
       Serial.println("SerialMonitor: Received command to start MTP service..."); Serial.flush();delay(10);
@@ -240,7 +277,14 @@ bool SerialManager::processCharacter(char c) {  //this is called by SerialManage
   return ret_val;
 }
 
-
+int SerialManager::receiveFilename(String &filename,const unsigned long timeout_millis) {
+  Serial.setTimeout(timeout_millis);  //set timeout in milliseconds
+  filename.remove(0); //clear the string
+  filename += Serial.readStringUntil('\n');  //append the string
+  if (filename.length() == 0) filename += Serial.readStringUntil('\n');  //append the string
+  Serial.setTimeout(1000);  //return the timeout to the default
+  return 0;
+}
 
 // //////////////////////////////////  Methods for defining and transmitting the GUI to the App
 

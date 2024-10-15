@@ -3,7 +3,7 @@
 
 // Create the audio library objects that we'll use
 AudioInputI2S_F32         audio_in(audio_settings);                         //from the Tympan_Library
-AudioSDWriter_F32_UI      audioSDWriter(audio_settings);                    //record audio to SD card.  This is stereo by default
+AudioSDWriter_F32_UI      audioSDWriter(&sd, audio_settings);               //record audio to SD card.  This is stereo by default
 AudioSynthWaveform_F32    sine1(audio_settings),sine2(audio_settings);      //from the Tympan_Library...for generating tones
 AudioEffectFade_F32       fade1(audio_settings), fade2(audio_settings);     //For smoohting start/stop of the tones
 AudioFilterBiquad_F32     highpass1(audio_settings), highpass2(audio_settings);     //for limiting bandwidth prior to measuring loudness

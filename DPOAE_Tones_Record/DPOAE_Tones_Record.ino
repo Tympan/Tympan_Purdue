@@ -24,7 +24,7 @@
   MIT License, Use at your own risk.
 */
 
-#include <Tympan_Library.h>
+#include <Tympan_Library.h>   //requires V3.1.0 or later
 #include "DPOAE_Settings_Manager.h"
 #include "Tone_Manager.h"
 #include "SerialManager.h"
@@ -37,7 +37,9 @@ AudioSettings_F32 audio_settings(sample_rate_Hz, audio_block_samples);
 
 // Create the audio library objects that we'll use
 Tympan    myTympan(TympanRev::E, audio_settings);           //use TympanRev::D or E or F
+SdFs      sd;                 //here is the sd card object, to be shared about AudioSDWriter and SDtoSerial
 #include "AudioProcessing.h"  //here is where most of the audio stuff is created
+
 
 // Create classes for controlling the system
 #include   "SerialManager.h"
@@ -45,6 +47,7 @@ Tympan    myTympan(TympanRev::E, audio_settings);           //use TympanRev::D o
 BLE_UI& ble = myTympan.getBLE_UI();      //myTympan owns the ble object, but we grab a reference to it here
 SerialManager   serialManager(&ble);     //create the serial manager for real-time control (via USB or App)
 State           myState(&audio_settings, &myTympan, &serialManager); //keeping one's state is useful for the App's GUI
+SDtoSerial      SD_to_serial(&sd, &Serial);  //transfers raw bytes of files on the sd over to Serial (part of Tympan Library)
 
 //set up the serial manager
 void setupSerialManager(void) {
