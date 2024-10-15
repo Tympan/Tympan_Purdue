@@ -91,7 +91,7 @@ void SerialManager::printHelp(void) {
   Serial.println(" z  : SD Transfer 1: Get file names at root of SD.");
   Serial.println(" Z  : SD Transfer 2: Open a file from the SD (will as for filename)");
   Serial.println(" x  : SD Transfer 3: Get size of file in bytes");
-  Serial.println(" X  : SD Transfer 4: Send find to PC");
+  Serial.println(" X  : SD Transfer 4: Send file to PC");
   
   #if defined(USE_MTPDISK) || defined(USB_MTPDISK_SERIAL)  //detect whether "MTP Disk" or "Serial + MTP Disk" were selected in the Arduino IDEA
     Serial.println("  > : SDUtil : Start MTP mode to read SD from PC (Tympan must be freshly restarted)");
