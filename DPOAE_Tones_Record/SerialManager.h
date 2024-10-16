@@ -10,7 +10,7 @@ extern Tympan myTympan;                    //created in the main *.ino file
 extern State myState;                      //created in the main *.ino file
 extern AudioSettings_F32 audio_settings;   //created in the main *.ino file  
 extern AudioSDWriter_F32_UI audioSDWriter; //created in AudioProcessing.h
-extern SDtoSerial SD_to_serial;            //created in the main *.ino file
+extern SdFileTransfer sdFileTransfer;        //created in the main *.ino file
 
 //functions in the main sketch that I want to call from here
 extern void setConfiguration(int);
@@ -88,10 +88,9 @@ void SerialManager::printHelp(void) {
   Serial.println(" q/Q: Start/Stop the Stepped DPOAE Test.");
   //Serial.println(" w/e: Switch Input to PCB Mics (w) or Line In (e)");
   Serial.println(" l/L: Start/Stop printing measured mic levels.");
-  Serial.println(" z  : SD Transfer 1: Get file names at root of SD.");
-  Serial.println(" Z  : SD Transfer 2: Open a file from the SD (will as for filename)");
-  Serial.println(" x  : SD Transfer 3: Get size of file in bytes");
-  Serial.println(" X  : SD Transfer 4: Send file to PC");
+  Serial.println(" z  : SD Transfer: Get file names at root of SD.");
+  Serial.println(" x    : Transfer file from Tympan SD to PC via Serial ('send' interactive)");
+  Serial.println(" X    : Transfer file from PC to Tympan SD via Serial ('receive' interactive)");
   
   #if defined(USE_MTPDISK) || defined(USB_MTPDISK_SERIAL)  //detect whether "MTP Disk" or "Serial + MTP Disk" were selected in the Arduino IDEA
     Serial.println("  > : SDUtil : Start MTP mode to read SD from PC (Tympan must be freshly restarted)");
@@ -228,34 +227,16 @@ bool SerialManager::processCharacter(char c) {  //this is called by SerialManage
       updateMuteDisplay();
       break;
     case 'z':
-      Serial.print("SerialMonitor: Listing Files on SD:"); //don't include end-of-line
-      SD_to_serial.sendFilenames(','); //send file names seperated by commas
-      break;
-    case 'Z':
-      {
-        Serial.println("SerialMonitor: Opening file: Send filename (ending with newline character) within 10 seconds");
-        String fname;  receiveFilename(fname, 10000);  //wait 10 seconds
-        if (SD_to_serial.open(fname)) {
-          Serial.println("SerialMonitor: " + fname + " successfully opened");
-        } else {
-          Serial.println("SerialMonitor: *** ERROR ***: " + fname + " could not be opened");
-        }
-      }
+      Serial.print("SerialMonitor: Listing Files on SD: "); //purposely don't include end-of-line
+      sdFileTransfer.sendFilenames(','); //send file names seperated by commas
       break;
     case 'x':
-      if (SD_to_serial.isFileOpen()) {
-        SD_to_serial.sendFileSize();
-      } else {
-        Serial.println("SerialMonitor: *** ERROR ***: Cannot get file size because no file is open");
-      }
+      if ((Serial.peek() == '\n') || (Serial.peek() == '\r')) Serial.read();  //remove any trailing EOL character
+      sdFileTransfer.sendFile_interactive();
       break;
     case 'X':
-      if (SD_to_serial.isFileOpen()) {
-        SD_to_serial.sendFile();
-        Serial.println();
-      } else {
-        Serial.println("SerialMonitor: *** ERROR ***: Cannot send file because no file is open");
-      }
+      if ((Serial.peek() == '\n') || (Serial.peek() == '\r')) Serial.read();  //remove any trailing EOL character
+      sdFileTransfer.receiveFile_interactive();
       break;
   #if defined(USE_MTPDISK) || defined(USB_MTPDISK_SERIAL)  //detect whether "MTP Disk" or "Serial + MTP Disk" were selected in the Arduino IDEA  
     case '>':

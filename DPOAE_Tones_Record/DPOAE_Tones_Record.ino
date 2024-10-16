@@ -7,11 +7,18 @@
     * Can manually step through the presets or can automatically step through
   Records audio line-in (as if from mic from DPOAE probe) to SD card.
   Control via BT App.
+	
+	This program has been expanded to include file transfer over the regular 
+	Serial link (ie, the MTP mode discussed below is not required).  To transfer
+	files over the Serial link, you will want to use a helper script, such as the
+	Python script included with this sketch.  If you don't want to use a helper script
+	and you only want to use Windows to move files, you will need MTP mode, as
+	discussed below.
 
   This program has been expanded to allow for the Tympan to also make its SD card
-  visible from your PC/Mac.  This support is very experimental and has several
-  known issues.  But, it still can be much better than having to repeated remove
-  and re-insert the SD card.
+  visible from your PC/Mac via "MTP" mode.  This support is very experimental and
+	has several  known issues.  But, it still can be much better than having to 
+	repeatedly remove the card and re-insert the SD card.
 
   The SD Reader behavior is called "MTP".  To enable MTP, you must tell the Arduino IDE
   to compile your code with different settings.  To see these settings and to see
@@ -24,7 +31,7 @@
   MIT License, Use at your own risk.
 */
 
-#include <Tympan_Library.h>   //requires V3.1.0 or later
+#include <Tympan_Library.h>   //requires V3.1.1 or later
 #include "DPOAE_Settings_Manager.h"
 #include "Tone_Manager.h"
 #include "SerialManager.h"
@@ -47,7 +54,7 @@ SdFs      sd;                 //here is the sd card object, to be shared about A
 BLE_UI& ble = myTympan.getBLE_UI();      //myTympan owns the ble object, but we grab a reference to it here
 SerialManager   serialManager(&ble);     //create the serial manager for real-time control (via USB or App)
 State           myState(&audio_settings, &myTympan, &serialManager); //keeping one's state is useful for the App's GUI
-SDtoSerial      SD_to_serial(&sd, &Serial);  //transfers raw bytes of files on the sd over to Serial (part of Tympan Library)
+SdFileTransfer  sdFileTransfer(&sd, &Serial);  //transfers raw bytes of files on the sd over to Serial (part of Tympan Library)
 
 //set up the serial manager
 void setupSerialManager(void) {
